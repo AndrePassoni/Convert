@@ -16,19 +16,40 @@ amount.addEventListener("input", () => {
     amount.value = amount.value.replace(hasCharactersRegex, "")
 })
 
-form.onsubmit = (event) => {
+form.onsubmit = async (event) => {
     event.preventDefault()
+
+    const currencyCode = currency.value
+    let symbol = ""
 
     switch (currency.value) {
         case "USD":
-            convertCurrency(amount.value, USD, "US$")
+            symbol = "US$"
             break
         case "EUR":
-            convertCurrency(amount.value, EUR, "€")
+            symbol = "€"
             break
         case "GBP":
-            convertCurrency(amount.value, GBP, "£")
+            symbol = "£"
             break
+        default:
+            symbol = "R$"
+    }
+
+    try {
+        const response = await fetch(`https://economia.awesomeapi.com.br/last/${currencyCode}-BRL`)
+
+        const data = await response.json()
+
+        const rateInfo = data[currencyCode + "BRL"]
+
+        const exchangeRate = Number(rateInfo.bid)
+
+        convertCurrency(amount.value, exchangeRate, symbol)
+
+    } catch (error) {
+        console.log(error)
+        alert("Não foi possível buscar a cotação atual. Tente novamente mais tarde.")
     }
 }
 
@@ -36,7 +57,7 @@ function convertCurrency(amount, price, symbol) {
     try {
         description.textContent = `${symbol} 1 = ${formatCurrencyBRL(price)}`
 
-        let total = amount * price
+        let total = Number(amount) * price
 
         if (isNaN(total)) {
             return alert("Por favor, digite o valor corretamente para converter.")
